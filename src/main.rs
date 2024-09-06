@@ -2,7 +2,7 @@ use std::env;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
-use time::{Date, OffsetDateTime, Time, UtcOffset};
+use time::{Date, OffsetDateTime, Time, UtcOffset, Weekday};
 use time::Month;
 
 struct RRule {
@@ -78,6 +78,17 @@ fn offset_date_time_from_ical(ical_str: &str) -> OffsetDateTime {
     OffsetDateTime::new_in_offset(date, time, offset)
 }
 
+fn get_nth_weekday(n: u8, year: i32, month: Month, wkday: Weekday) -> Date {
+    let mut first = Date::from_calendar_date(year, month, 1)
+        .expect("Error parsing year and month for nth weekday.");
+    let mut i = 0;
+    while first.weekday().nth_next(i) != wkday {
+        i += 1;
+    }
+
+    first.replace_day(i + 1 + (n - 1) * 7).expect("Error calculating day for nth weekday.")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -128,5 +139,33 @@ mod tests {
         assert!(dt.hour() == 22);
         assert!(dt.minute() == 15);
         assert!(dt.second() == 18);
+    }
+
+    #[test]
+    fn nth_weekday() {
+        assert_eq!(get_nth_weekday(1, 2024, Month::September, Weekday::Sunday),
+                   Date::from_calendar_date(2024, Month::September, 1).unwrap());
+        assert_eq!(get_nth_weekday(5, 2024, Month::September, Weekday::Monday),
+                   Date::from_calendar_date(2024, Month::September, 30).unwrap());
+    }
+
+    #[test]
+    fn get_tz_offset_pst() {
+        todo!()
+    }
+
+    #[test]
+    fn get_tz_offset_pdt() {
+        todo!()
+    }
+
+    #[test]
+    fn get_tz_offset_utc_during_pst() {
+        todo!()
+    }
+
+    #[test]
+    fn get_tz_offset_utc_during_pdt() {
+        todo!()
     }
 }
