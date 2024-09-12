@@ -2,21 +2,71 @@ use std::env;
 use std::fs::File;
 use std::io::BufReader;
 use std::io::prelude::*;
-use time::{Date, OffsetDateTime, Time, UtcOffset, Weekday};
+use time::{Date, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset, Weekday};
 use time::Month;
 
 struct RRule {
     freq: String,
     until: String,
     count: u16,
+    by_month: Month,
+    by_day_n: u8,
+    by_day_weekday: Weekday,
 }
 
 struct TimeZone {
     id: String,
-    offset: i32,
+    std_offset: UtcOffset,
+    dst_offset: UtcOffset,
     dst_start: RRule,
     dst_end: RRule,
-    dst_offset: i32,
+}
+
+impl TimeZone {
+    fn get_tz_offset<'a>(date: Date, time: Time, local: bool, tz: TimeZone) -> Result<UtcOffset, &'a str> {
+        let checking_date = OffsetDateTime::new_in_offset(date, time, UtcOffset::from_hms(0, 0, 0)?);
+
+        //Find out which RRule was the most recent
+        let dst_start_datetime = OffsetDateTime::new_in_offset(
+            get_nth_weekday(tz.dst_start.by_day_n, date.year(), tz.dst_start.by_month, tz.dst_start.by_day_weekday),
+            Time::from_hms(2, 0, 0)?,
+            if local {
+                UtcOffset::from_hms(0, 0, 0)?
+            } else {
+                tz.std_offset
+            }
+        );
+
+        if checking_date < dst_start_datetime {
+            return Ok(tz.std_offset)
+        }
+
+        let dst_end_datetime = OffsetDateTime::new_in_offset(
+            get_nth_weekday(tz.dst_end.by_day_n, date.year(), tz.dst_end.by_month, tz.dst_end.by_day_weekday),
+            Time::from_hms(2, 0, 0)?,
+            if local {
+                UtcOffset::from_hms(0, 0, 0)?
+            } else {
+                tz.std_offset
+            }
+        );
+
+        if checking_date < dst_end_datetime {
+            return Ok(tz.dst_offset)
+        }
+
+        Ok(tz.std_offset)
+
+        //if it's after 2 AM local time
+
+            //Need to hash out the details about how this transition happens at 2 AM
+            //From UTC and from Pacific Time, at both DST transitions
+            //When DST is ending, if the Std time calculated from UTC is 2 AM, the transition has occurred. Put in STD.
+            //When DST is ending, if the local time is 2 AM or later, the transition has occurred. Use STD offset to get UTC.
+            //When DST is starting, if the STD time calculated from UTC is 2 AM or later, make it 3 AM (Put in DST).
+            //When DST is starting, local times between >= 0200 and <0300 will move forward one hour. Before is STD, after is DST.
+        //Get the corresponding offset
+    }
 }
 
 fn main() {
