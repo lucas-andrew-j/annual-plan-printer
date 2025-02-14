@@ -1,6 +1,6 @@
-use time::{Date, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset, Weekday, Month};
+use time::{Date, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset, Weekday, Month, Duration};
 
-struct ical_content {
+struct IcalContent {
     timezone: TimeZone,
     events: Vec<Event>,
 }
@@ -18,28 +18,25 @@ struct TimeZone {
 struct Event {
     dt_stamp: OffsetDateTime,
     uid: Uid,
-    dt_start: OffsetDateTime,
+    dt_start: DateOrDateTime,
     description: String,
     location: String,
     rrule: Option<Rule>,
-    event_end: EvendEnd,
-}
-
-enum EventEnd {
-    DtEnd(OffsetDateTime),
-    Duration(Time),
+    dt_end: DateOrDateTime,
+    duration: Duration,
 }
 
 // Using explicit values for properties because it is probably smaller than a BTreeMap, and
 // definitely faster to access. Can look into the size comparison later.
 struct RRule {
     freq: Freq,
-    recur_end: Option<RecurEnd> ,
+    until: DateOrDateTime,
+    count: usize,
     interval: Option<>,
     bysecond: Option<usize>,
     byminute: Option<usize>,
     byhour: Option<usize>,
-    byday: Option<List<(Weekday, Option<isize>>>,
+    byday: Option<List<(Weekday, Option<isize>)>>,
     bymonthday: Option<isize>,
     byyearday: Option<isize>,
     byweekno: Option<isize>,
@@ -56,11 +53,6 @@ enum Freq {
     WEEKLY,
     MONTHLY,
     YEARLY,
-}
-
-enum RecurEnd {
-    Until(DateOrDateTime),
-    Count(usize),
 }
 
 enum Weekday {
