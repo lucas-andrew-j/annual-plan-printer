@@ -1,15 +1,26 @@
 use std::fs::File;
-use std::io::BufReader;
+use std::io::{BufReader, Lines};
 use time::{Date, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset, Weekday, Month, Duration};
 use super::components::*;
 
-pub fn parse_ical (reader: &mut BufReader<File>) -> Result<ICal, &str> {
-    // TODO
+pub fn parse_ical (mut lines: Lines<BufReader<File>>) -> Result<ICal, String> {
+    let line = match lines.next() {
+        None => return Err("Empty ics file provided".to_owned()),
+        Some(Err(e)) => return Err("Something went wrong".to_owned()),
+        Some(Ok(line)) => line,
+    };
 
-    Err("Not implemented yet")
+    match line.as_str() {
+        "BEGIN:VCALENDAR" => {},
+        _ => return Err("Improperly formatted ics file provided".to_owned()),
+    }
+
+    let ical = ICal::new();
+
+    Ok(ical)
 }
 
-fn parse_ical_timezone(reader: &mut BufReader<File>) -> Result<TimeZone, &str> {
+fn parse_ical_timezone(reader: &mut BufReader<File>) -> Result<TimeZone, String> {
     // TODO
 
     //     while line does not start with "TZID:": if read line fails, invalid timezone format
@@ -33,10 +44,10 @@ fn parse_ical_timezone(reader: &mut BufReader<File>) -> Result<TimeZone, &str> {
     // EOF: invalid timezone format
     // "END:VTIMEZONE": BREAK
 
-    Err("Not implemented yet")
+    Err("Not implemented yet".to_owned())
 }
 
-fn parse_ical_offset(reader: &mut BufReader<File>) -> Result<(UtcOffset, RRule), & str> {
+fn parse_ical_offset(reader: &mut BufReader<File>) -> Result<(UtcOffset, RRule), String> {
     // TODO
 
     // let mut offset value = None;
@@ -49,10 +60,10 @@ fn parse_ical_offset(reader: &mut BufReader<File>) -> Result<(UtcOffset, RRule),
     // "END:DAYLIGHT" or "END:STANDARD": BREAK
     // _ : read next line
 
-    Err("not implemented yet")
+    Err("not implemented yet".to_owned())
 }
 
-fn parse_ical_rrule(rrule_str: &str) -> Result<RRule, &str> {
+fn parse_ical_rrule(rrule_str: &str) -> Result<RRule, String> {
     // TODO
 
     // freq_start = index of "FREQ="
@@ -82,54 +93,54 @@ fn parse_ical_rrule(rrule_str: &str) -> Result<RRule, &str> {
     //     by_day_weekday = by_day_weekday_val,
     // }
 
-    Err("not implemented yet")
+    Err("Not implemented yet".to_owned())
 }
 
-fn get_tz_offset(date: Date, time: Time, local: bool, tz: TimeZone) -> Result<UtcOffset, time::error::ComponentRange> {
-    let checking_date = OffsetDateTime::new_in_offset(date, time, UtcOffset::from_hms(0, 0, 0)?);
-
-    //Find out which RRule was the most recent
-    let dst_start_datetime = OffsetDateTime::new_in_offset(
-        get_nth_weekday(tz.dst_start.by_day_n, date.year(), tz.dst_start.by_month, tz.dst_start.by_day_weekday),
-        Time::from_hms(2, 0, 0)?,
-        if local {
-            UtcOffset::from_hms(0, 0, 0)?
-        } else {
-            tz.std_offset
-        }
-    );
-
-    if checking_date < dst_start_datetime {
-        return Ok(tz.std_offset)
-    }
-
-    let dst_end_datetime = OffsetDateTime::new_in_offset(
-        get_nth_weekday(tz.dst_end.by_day_n, date.year(), tz.dst_end.by_month, tz.dst_end.by_day_weekday),
-        Time::from_hms(2, 0, 0)?,
-        if local {
-            UtcOffset::from_hms(0, 0, 0)?
-        } else {
-            tz.std_offset
-        }
-    );
-
-    if checking_date < dst_end_datetime {
-        return Ok(tz.dst_offset)
-    }
-
-    Ok(tz.std_offset)
-
-    // TODO
-    //if it's after 2 AM local time
-
-    //Need to hash out the details about how this transition happens at 2 AM
-    //From UTC and from Pacific Time, at both DST transitions
-    //When DST is ending, if the Std time calculated from UTC is 2 AM, the transition has occurred. Put in STD.
-    //When DST is ending, if the local time is 2 AM or later, the transition has occurred. Use STD offset to get UTC.
-    //When DST is starting, if the STD time calculated from UTC is 2 AM or later, make it 3 AM (Put in DST).
-    //When DST is starting, local times between >= 0200 and <0300 will move forward one hour. Before is STD, after is DST.
-    //Get the corresponding offset
-}
+// fn get_tz_offset(date: Date, time: Time, local: bool, tz: TimeZone) -> Result<UtcOffset, time::error::ComponentRange> {
+//     let checking_date = OffsetDateTime::new_in_offset(date, time, UtcOffset::from_hms(0, 0, 0)?);
+//
+//     //Find out which RRule was the most recent
+//     let dst_start_datetime = OffsetDateTime::new_in_offset(
+//         get_nth_weekday(tz.dst_start.by_day_n, date.year(), tz.dst_start.by_month, tz.dst_start.by_day_weekday),
+//         Time::from_hms(2, 0, 0)?,
+//         if local {
+//             UtcOffset::from_hms(0, 0, 0)?
+//         } else {
+//             tz.std_offset
+//         }
+//     );
+//
+//     if checking_date < dst_start_datetime {
+//         return Ok(tz.std_offset)
+//     }
+//
+//     let dst_end_datetime = OffsetDateTime::new_in_offset(
+//         get_nth_weekday(tz.dst_end.by_day_n, date.year(), tz.dst_end.by_month, tz.dst_end.by_day_weekday),
+//         Time::from_hms(2, 0, 0)?,
+//         if local {
+//             UtcOffset::from_hms(0, 0, 0)?
+//         } else {
+//             tz.std_offset
+//         }
+//     );
+//
+//     if checking_date < dst_end_datetime {
+//         return Ok(tz.dst_offset)
+//     }
+//
+//     Ok(tz.std_offset)
+//
+//     // TODO
+//     //if it's after 2 AM local time
+//
+//     //Need to hash out the details about how this transition happens at 2 AM
+//     //From UTC and from Pacific Time, at both DST transitions
+//     //When DST is ending, if the Std time calculated from UTC is 2 AM, the transition has occurred. Put in STD.
+//     //When DST is ending, if the local time is 2 AM or later, the transition has occurred. Use STD offset to get UTC.
+//     //When DST is starting, if the STD time calculated from UTC is 2 AM or later, make it 3 AM (Put in DST).
+//     //When DST is starting, local times between >= 0200 and <0300 will move forward one hour. Before is STD, after is DST.
+//     //Get the corresponding offset
+// }
 
 fn offset_date_time_from_ical(ical_str: &str) -> OffsetDateTime {
     let mut start = 0;

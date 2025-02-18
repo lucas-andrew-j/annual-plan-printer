@@ -1,8 +1,14 @@
 use time::{Date, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset, Weekday, Month, Duration};
 
 pub struct ICal {
-    timezone: TimeZone,
+    //timezone: TimeZone, TODO
     events: Vec<Event>,
+}
+
+impl ICal {
+    pub fn new() -> ICal {
+        ICal { events: Vec::new() }
+    }
 }
 
 pub struct TimeZone {
