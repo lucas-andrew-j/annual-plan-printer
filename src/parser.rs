@@ -3,6 +3,9 @@ use std::io::{BufReader, Lines};
 use time::{Date, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset, Weekday, Month, Duration};
 use super::components::*;
 
+const BEGIN: &str = "BEGIN:";
+const CALENDAR: &str = "VCALENDAR";
+
 pub fn parse_ical (mut lines: Lines<BufReader<File>>) -> Result<ICal, String> {
     let line = match lines.next() {
         None => return Err("Empty ics file provided".to_owned()),
@@ -10,8 +13,9 @@ pub fn parse_ical (mut lines: Lines<BufReader<File>>) -> Result<ICal, String> {
         Some(Ok(line)) => line,
     };
 
+    let begin_calendar = format!("{}{}", BEGIN, CALENDAR);
     match line.as_str() {
-        "BEGIN:VCALENDAR" => {},
+        begin_calendar => {},
         _ => return Err("Improperly formatted ics file provided".to_owned()),
     }
 
