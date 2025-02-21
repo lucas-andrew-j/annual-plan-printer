@@ -1,30 +1,42 @@
 use std::fs::File;
-use std::io::{BufReader, Lines};
+use std::io::{BufReader, Error, Lines};
 use time::{Date, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset, Weekday, Month, Duration};
 use super::components::*;
 
 const BEGIN: &str = "BEGIN:";
+const END: &str = "END:";
 const CALENDAR: &str = "VCALENDAR";
+const TIMEZONE: &str = "VTIMEZONE";
+const EVENT: &str = "VEVENT";
 
-pub fn parse_ical (mut lines: Lines<BufReader<File>>) -> Result<ICal, String> {
-    let line = match lines.next() {
-        None => return Err("Empty ics file provided".to_owned()),
-        Some(Err(e)) => return Err("Something went wrong".to_owned()),
+pub fn parse_ical (mut lines: Lines<BufReader<File>>) -> Result<ICal, Error> {
+    let mut line = match lines.next() {
+        None => return Err(Error::other("Empty ics file provided")),
+        Some(Err(e)) => return Err(e),
         Some(Ok(line)) => line,
     };
 
-    let begin_calendar = format!("{}{}", BEGIN, CALENDAR);
-    match line.as_str() {
-        begin_calendar => {},
-        _ => return Err("Improperly formatted ics file provided".to_owned()),
+    if line.as_str() != "BEGIN:VCALENDAR" { //format!("{}{}", BEGIN, CALENDAR) {
+        return Err(Error::other("Improperly formatted ics file provided"));
     }
 
     let ical = ICal::new();
 
+    while let Some(line) = lines.next() {
+        match line?.as_str() {
+            "BEGIN:VTIMEZONE" => println!("Parsing timezone"),
+            "BEGIN:VEVENT" => println!("Parsing event"),
+            "END:VCALENAR" => break,
+            _ => {},
+        };
+    }
+
+    //Not checking for the end of the calendar because I don't care :)
+
     Ok(ical)
 }
 
-fn parse_ical_timezone(reader: &mut BufReader<File>) -> Result<TimeZone, String> {
+fn parse_ical_timezone(mut lines: &Lines<BufReader<File>>) -> Result<TimeZone, String> {
     // TODO
 
     //     while line does not start with "TZID:": if read line fails, invalid timezone format
@@ -51,7 +63,11 @@ fn parse_ical_timezone(reader: &mut BufReader<File>) -> Result<TimeZone, String>
     Err("Not implemented yet".to_owned())
 }
 
-fn parse_ical_offset(reader: &mut BufReader<File>) -> Result<(UtcOffset, RRule), String> {
+fn parse_ical_event(mut lines: &Lines<BufReader<File>>) -> Result<TimeZone, String> {
+    Err("Not implemented yet".to_owned())
+}
+
+fn parse_ical_offset(mut lines: Lines<BufReader<File>>) -> Result<(UtcOffset, RRule), String> {
     // TODO
 
     // let mut offset value = None;
@@ -67,7 +83,7 @@ fn parse_ical_offset(reader: &mut BufReader<File>) -> Result<(UtcOffset, RRule),
     Err("not implemented yet".to_owned())
 }
 
-fn parse_ical_rrule(rrule_str: &str) -> Result<RRule, String> {
+fn parse_ical_rrule(mut lines: Lines<BufReader<File>>) -> Result<RRule, String> {
     // TODO
 
     // freq_start = index of "FREQ="
@@ -279,7 +295,7 @@ mod tests {
     #[test]
     fn get_tz_offset_dst() {
         let (date, time) = date_time_from_ical("20240310T020000");
-        let result = get_tz_offset(date, time, true, "America/Los_Angeles");// -> Result<UtcOffset, time::error::ComponentRange>
+        // let result = get_tz_offset(date, time, true, "America/Los_Angeles");// -> Result<UtcOffset, time::error::ComponentRange>
         todo!()
     }
 
