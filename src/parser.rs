@@ -1,13 +1,7 @@
 use std::fs::File;
 use std::io::{BufReader, Error, Lines};
-use time::{Date, OffsetDateTime, PrimitiveDateTime, Time, UtcOffset, Weekday, Month, Duration};
+use time::{Date, OffsetDateTime, Time, UtcOffset, Weekday, Month, Duration};
 use super::components::*;
-
-const BEGIN: &str = "BEGIN:";
-const END: &str = "END:";
-const CALENDAR: &str = "VCALENDAR";
-const TIMEZONE: &str = "VTIMEZONE";
-const EVENT: &str = "VEVENT";
 
 pub fn parse_ical (mut lines: Lines<BufReader<File>>) -> Result<ICal, Error> {
     let mut line = match lines.next() {
