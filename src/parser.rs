@@ -402,7 +402,18 @@ mod tests {
                 return Err(Error::other("by_second cannot be specified more than once"));
             }
 
-            todo!()
+            let mut by_second = by_second.parse::<usize>();
+
+            let Some(by_second) = by_second else {
+                return Err(Error::other("invalid interval"))
+            };
+
+            match by_second {
+                0..=60 => self.by_second = by_second,
+                _ => return Err(Error::other("invalid interval value")),
+            }
+
+            Ok(self)
         }
 
         // - BYMINUTE values should be 0-59
